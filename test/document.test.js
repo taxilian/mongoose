@@ -569,6 +569,46 @@ describe('document', function() {
     assert.equal(obj.answer, 42);
   });
 
+  it.only('can save multiple times with changes to complex subdocuments', () => {
+    const clipSchema = Schema({
+      height: Number,
+      rows: Number,
+      width: Number,
+    }, {_id: false, id: false});
+    const questionSchema = Schema({
+      type: String,
+      age: Number,
+      clip: {
+        type: clipSchema,
+      },
+    }, {_id: false, id: false});
+    const keySchema = Schema({ql: [questionSchema]}, {_id: false, id: false});
+    const Model = db.model('gh8468-2', Schema({
+      name: String,
+      keys: [keySchema],
+    }));
+    const doc = new Model({
+      name: 'test',
+      keys: [
+        {ql: [
+          { type: 'mc', clip: {width: 1} },
+          { type: 'mc', clip: {height: 1, rows: 1} },
+          { type: 'mc', clip: {height: 2, rows: 1} },
+          { type: 'mc', clip: {height: 3, rows: 1} },
+        ]},
+      ],
+    });
+    console.log(JSON.stringify(doc, null, 2));
+    // return Promise.all([doc.save(), doc.save()]); // fails
+    return doc.save().then(() => {
+
+        doc.keys[0].ql[0].clip = {width: 4.3, rows: 3};
+        doc.keys[0].ql[0].age = 42;
+
+        return doc.save();
+    }); // passes
+  });
+
   it('saves even if `_id` is null (gh-6406)', function() {
     const schema = new Schema({ _id: Number, val: String });
     const Model = db.model('Test', schema);
