@@ -607,6 +607,12 @@ describe('document', function() {
       doc.keys[0].ql[0].age = 42;
 
       return doc.save();
+    }).catch(err => {
+        console.warn("Errors found:");
+        for (let k of Object.keys(err.errors)) {
+            console.warn(k, err.errors[k].stack, "\n\nConflicting with:", err.errors[k].conflictStack);
+        }
+        throw err;
     }); // passes
   });
 
